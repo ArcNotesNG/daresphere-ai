@@ -35,7 +35,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(WELCOME_TEXT, reply_markup=InlineKeyboardMarkup(KEYBOARD))
 
 async def powers_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🔥 35 POWERS Active! Chat, Business, CV, Bible, Love & More! Type anything!")
+    await update.message.reply_text("🔥 35 POWERS Active! Chat, Business, CV, Bible, Love & More!")
 
 async def love_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"💖 For {LOVE} - Forever yours - Dare 💖 ({TAGLINE})")
@@ -44,9 +44,9 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
     await q.answer()
     if q.data == "powers":
-        await q.message.reply_text("💖 For GLOWED - My Everything ❤️ - 35 Powers Ready!")
+        await q.edit_message_text("🔥 35 Powers Ready! Type anything!")
     else:
-        await q.message.reply_text("💖 My Love - Inemisit Dare - Forever!")
+        await q.edit_message_text(f"💖 My Love - {LOVE} - Forever!")
 
 async def chat_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"{BRAND}: You said: {update.message.text} - {TAGLINE} 🙏")
@@ -62,7 +62,7 @@ def run_bot():
     app.add_handler(CallbackQueryHandler(button))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat_all))
     print("DareSphere Polling LIVE...")
-    app.run_polling(close_loop=False, stop_signals=None)
+    app.run_polling(close_loop=False, stop_signals=None, drop_pending_updates=True)
 
 threading.Thread(target=run_bot, daemon=True).start()
 
