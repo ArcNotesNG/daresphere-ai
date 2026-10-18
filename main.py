@@ -62,7 +62,7 @@ def run_bot():
     app.add_handler(CallbackQueryHandler(button))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat_all))
     print("DareSphere Polling LIVE...")
-    app.run_polling(close_loop=False)
+    app.run_polling(close_loop=False, stop_signals=None)
 
 threading.Thread(target=run_bot, daemon=True).start()
 
