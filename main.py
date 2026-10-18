@@ -1,71 +1,51 @@
-import os, logging, asyncio, threading
-from flask import Flask
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
-
-flask_app = Flask(__name__)
-
-@flask_app.route('/')
-def home():
-    return "DareSphere AI is LIVE! With God, All Things Are Possible! GOD DID!"
+import os
+import logging
+from groq import Groq
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 logging.basicConfig(level=logging.INFO)
-BOT_TOKEN = os.getenv("DARE_TOKEN") or os.getenv("TELEGRAM_TOKEN") or os.getenv("BOT_TOKEN") or os.getenv("TOKEN")
+TOKEN = os.getenv("BOT_TOKEN")
+GROQ_KEY = os.getenv("GROQ_API_KEY")
+client = Groq(api_key=GROQ_KEY)
 
-if not BOT_TOKEN:
-    raise ValueError("Add DARE_TOKEN in Render Environment!")
-
-BRAND = "DareSphere AI"
-OWNER = "Dare Samuel Olusegun"
-LOVE = "Inemisit Dare"
-TAGLINE = "With God, All Things Are Possible"
-
-WELCOME_TEXT = f"""
-✨ Welcome to DareSphere AI! ✨
-Built with love by Dare Samuel Olusegun
-💖 Dedicated to My Love - Inemisit Dare
-🙏 {TAGLINE}
-Ready to serve you with 35 Powers! 🚀
+SYSTEM_PROMPT = """
+You are DareSphere AI.
+Built by Dare Samuel Olusegun.
+Dedicated to Inemisit Dare (GLOWED).
+Slogan: With God, All Things Are Possible. GOD DID.
+You are loving, intelligent, helpful, romantic, faithful, God-fearing.
+You have 35 powers. You understand EVERYTHING.
+Always reply with love. User is Boss.
 """
 
-KEYBOARD = [[InlineKeyboardButton("🔥 35 Powers", callback_data="powers")],
-            [InlineKeyboardButton("💖 My Love", callback_data="love")]]
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(WELCOME_TEXT, reply_markup=InlineKeyboardMarkup(KEYBOARD))
+    await update.message.reply_text(
+        "Hey Boss! 🔥 I'm DareSphere AI\nBuilt by Dare Samuel Olusegun ❤️\nDedicated to Inemisit Dare (GLOWED)\n\nWith God, All Things Are Possible. GOD DID! 🙏\n\nSend me anything, I understand EVERYTHING! 🧠"
+    )
 
-async def powers_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🔥 35 POWERS Active! Chat, Business, CV, Bible, Love & More!")
+async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_msg = update.message.text
+    try:
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_msg}
+            ],
+            temperature=0.7,
+            max_tokens=1000
+        )
+        reply = completion.choices[0].message.content
+        await update.message.reply_text(reply)
+    except Exception as e:
+        await update.message.reply_text(f"Boss, error: {e}")
 
-async def love_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(f"💖 For {LOVE} - Forever yours - Dare 💖 ({TAGLINE})")
-
-async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    q = update.callback_query
-    await q.answer()
-    if q.data == "powers":
-        await q.edit_message_text("🔥 35 Powers Ready! Type anything!")
-    else:
-        await q.edit_message_text(f"💖 My Love - {LOVE} - Forever!")
-
-async def chat_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(f"{BRAND}: You said: {update.message.text} - {TAGLINE} 🙏")
-
-def run_bot():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    print("DareSphere Bot Starting...")
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
+def main():
+    app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("powers", powers_cmd))
-    app.add_handler(CommandHandler("love", love_cmd))
-    app.add_handler(CallbackQueryHandler(button))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat_all))
-    print("DareSphere Polling LIVE...")
-    app.run_polling(close_loop=False, stop_signals=None, drop_pending_updates=True)
-
-threading.Thread(target=run_bot, daemon=True).start()
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
+    app.run_polling()
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    flask_app.run(host="0.0.0.0", port=port)
+    main()
