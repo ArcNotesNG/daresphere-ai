@@ -1,4 +1,5 @@
 python-telegram-bot==20.8
 groq
-python-dotenv==1.0.0
 flask
+requests
+python-dotenv==1.0.0
